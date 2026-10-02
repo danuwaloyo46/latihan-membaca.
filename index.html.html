@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MPI Interaktif - Media Pembelajaran Literasi Membaca SD</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              purple: '#7B2CBF',
+              teal: '#2EC4B6',
+              dark: '#5A189A',
+              accent: '#FF9F1C'
+            }
+          },
+          fontFamily: {
+            display: ['Fredoka', 'system-ui', 'sans-serif'],
+            sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Canvas Confetti, HTML2Canvas & jsPDF CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    h1, h2, h3, .font-display {
+      font-family: 'Fredoka', sans-serif;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+    .animate-float {
+      animation: float 3s ease-in-out infinite;
+    }
+    @media print {
+      body * { visibility: hidden; }
+      #printable-certificate, #printable-certificate * { visibility: visible; }
+      #printable-certificate {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100vw;
+        margin: 0;
+        padding: 20px;
+        box-shadow: none;
+        border: none;
+        background: white !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body class="bg-[#F8F9FE] dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col antialiased transition-colors duration-200">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-40 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <button onclick="navigateTab('home')" class="text-xl sm:text-2xl font-bold tracking-tight text-[#7B2CBF] dark:text-[#a855f7] font-display flex items-center gap-1.5 focus:outline-none">
+        <span class="text-[#2EC4B6]">MPI</span>
+        <span class="text-slate-800 dark:text-slate-100">Interaktif</span>
+        <span class="text-xs bg-[#7B2CBF]/10 dark:bg-purple-900/40 text-[#7B2CBF] dark:text-purple-300 font-semibold px-2 py-0.5 rounded-md hidden md:inline-block">SD Literasi</span>
+      </button>
+
+      <nav class="hidden md:flex items-center gap-1 lg:gap-2 text-sm font-medium">
+        <button id="nav-home" onclick="navigateTab('home')" class="px-3 py-1.5 rounded-lg transition-colors text-[#7B2CBF] bg-purple-50 dark:bg-purple-950/40 font-semibold">Beranda</button>
+        <button id="nav-materi" onclick="navigateTab('materi')" class="px-3 py-1.5 rounded-lg transition-colors text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">Materi Kata & Teks</button>
+        <button id="nav-asesmen" onclick="navigateTab('asesmen')" class="px-3 py-1.5 rounded-lg transition-colors text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">Asesmen Akhir</button>
+        <button id="nav-sertifikat" onclick="navigateTab('sertifikat')" class="px-3 py-1.5 rounded-lg transition-colors text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">Sertifikat Belajar</button>
+        <button id="nav-kirim" onclick="navigateTab('kirim-nilai')" class="px-3 py-1.5 rounded-lg transition-colors text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">Kirim Nilai (WA)</button>
+      </nav>
+
+      <div class="flex items-center gap-2 sm:gap-3">
+        <div class="hidden sm:flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg">
+          <span>Progres:</span>
+          <span id="header-progress" class="text-[#7B2CBF] dark:text-[#2EC4B6] font-bold">0%</span>
+        </div>
+        <button onclick="toggleDarkMode()" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white" title="Ganti Mode Gelap/Terang">
+          <span id="dark-icon">🌙</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Navigation Bar -->
+    <div class="flex md:hidden items-center justify-around px-2 py-2 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-700 text-xs">
+      <button onclick="navigateTab('home')" class="px-2.5 py-1 rounded-md font-medium text-[#7B2CBF]">Beranda</button>
+      <button onclick="navigateTab('materi')" class="px-2.5 py-1 rounded-md font-medium text-slate-600">Materi</button>
+      <button onclick="navigateTab('asesmen')" class="px-2.5 py-1 rounded-md font-medium text-slate-600">Asesmen</button>
+      <button onclick="navigateTab('sertifikat')" class="px-2.5 py-1 rounded-md font-medium text-slate-600">Sertifikat</button>
+      <button onclick="navigateTab('kirim-nilai')" class="px-2.5 py-1 rounded-md font-medium text-slate-600">Kirim WA</button>
+    </div>
+  </header>
+
+  <!-- Main Viewport Container -->
+  <main id="app-container" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- View Dynamic Insertion -->
+  </main>
+
+  <!-- Floating Audio Recorder Widget -->
+  <div id="floating-recorder" class="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    <div id="recorder-panel" class="hidden mb-3 w-80 sm:w-96 p-4 rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border-2 border-[#7B2CBF]/30 dark:border-purple-500/30 backdrop-blur-md">
+      <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-lg bg-[#7B2CBF]/10 text-[#7B2CBF] flex items-center justify-center font-bold">🎙️</div>
+          <div>
+            <h4 class="font-display font-semibold text-xs sm:text-sm text-slate-800 dark:text-slate-100">Perekam Suara Membaca</h4>
+            <p class="text-[11px] text-slate-400">Media Pembelajaran Interaktif SD</p>
+          </div>
+        </div>
+        <button onclick="toggleRecorderPanel()" class="text-xs text-slate-400 hover:text-slate-600">Tutup</button>
+      </div>
+
+      <div class="my-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center">
+        <div id="recorder-timer" class="text-xs font-mono font-bold text-rose-500 hidden">Sedang Merekam: 00:00</div>
+        <div id="recorder-status" class="text-xs text-slate-500">Klik tombol merah untuk mulai merekam suaramu</div>
+        <audio id="audio-playback" controls class="w-full mt-2 hidden"></audio>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="btn-record-action" onclick="toggleRecordAction()" class="flex-1 py-2 px-3 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs shadow transition-all">
+          🔴 Mulai Rekam Suara
+        </button>
+        <button id="btn-download-record" onclick="downloadRecordedAudio()" class="hidden py-2 px-3 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold">
+          💾 Simpan
+        </button>
+      </div>
+    </div>
+
+    <button onclick="toggleRecorderPanel()" class="flex items-center gap-2 px-4 py-3 rounded-full font-display font-semibold text-sm shadow-xl bg-gradient-to-r from-[#7B2CBF] to-[#2EC4B6] text-white hover:shadow-2xl hover:scale-102 transition-all">
+      <span>🎙️ Rekam Suara</span>
+    </button>
+  </div>
+
+  <!-- Footer -->
+  <footer class="w-full bg-slate-900 text-slate-300 border-t border-slate-800 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div class="md:col-span-2 space-y-2">
+          <span class="text-xl font-bold font-display text-white"><span class="text-[#2EC4B6]">MPI</span> Interaktif SD</span>
+          <p class="text-xs sm:text-sm text-slate-400 max-w-md leading-relaxed">
+            Media Pembelajaran Interaktif digital ramah anak usia SD (6–8 tahun) untuk belajar membaca kata 4, 5, 6 huruf, pemahaman teks, asesmen otomatis, sertifikat PDF, dan kirim nilai ke WhatsApp Admin.
+          </p>
+        </div>
+        <div>
+          <h4 class="text-xs font-bold text-white uppercase tracking-wider mb-2">Menu Pembelajaran</h4>
+          <ul class="space-y-1.5 text-xs text-slate-400">
+            <li><a href="javascript:void(0)" onclick="navigateTab('materi')" class="hover:text-[#2EC4B6]">📖 Materi Kata & Teks</a></li>
+            <li><a href="javascript:void(0)" onclick="navigateTab('asesmen')" class="hover:text-[#2EC4B6]">🏆 Asesmen Akhir (30 Soal)</a></li>
+            <li><a href="javascript:void(0)" onclick="navigateTab('sertifikat')" class="hover:text-[#2EC4B6]">📜 Sertifikat Belajar</a></li>
+            <li><a href="javascript:void(0)" onclick="navigateTab('kirim-nilai')" class="hover:text-[#2EC4B6]">💬 Kirim Nilai (WA)</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="text-xs font-bold text-white uppercase tracking-wider mb-2">WhatsApp Admin</h4>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Nomor Admin: <strong class="text-emerald-400 font-mono">085828459399</strong><br>
+            Hasil belajar dan rekaman suara siswa dikirimkan langsung ke kontak WhatsApp admin.
+          </p>
+        </div>
+      </div>
+      <div class="mt-8 pt-4 border-t border-slate-800 text-center text-xs text-slate-500">
+        © 2026 MPI Interaktif Literasi Membaca SD. Siap dipublikasikan di Google Sites, GitHub Pages, atau Hosting Web.
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    /* =========================================================================
+       DATASET PEMBELAJARAN MPI INTERAKTIF
+       ========================================================================= */
+    const WORDS_4 = [
+      { id: '4-1', word: 'BACA', syllables: ['ba', 'ca'], emoji: '📖' },
+      { id: '4-2', word: 'BUKU', syllables: ['bu', 'ku'], emoji: '📚' },
+      { id: '4-3', word: 'CITA', syllables: ['ci', 'ta'], emoji: '⭐' },
+      { id: '4-4', word: 'CUCI', syllables: ['cu', 'ci'], emoji: '🧼' },
+      { id: '4-5', word: 'DADU', syllables: ['da', 'du'], emoji: '🎲' },
+      { id: '4-6', word: 'DASI', syllables: ['da', 'si'], emoji: '👔' },
+      { id: '4-7', word: 'FOTO', syllables: ['fo', 'to'], emoji: '📷' },
+      { id: '4-8', word: 'GIGI', syllables: ['gi', 'gi'], emoji: '🦷' },
+      { id: '4-9', word: 'GURU', syllables: ['gu', 'ru'], emoji: '👩‍🏫' },
+      { id: '4-10', word: 'HATI', syllables: ['ha', 'ti'], emoji: '❤️' },
+      { id: '4-11', word: 'JARI', syllables: ['ja', 'ri'], emoji: '🖐️' },
+      { id: '4-12', word: 'KAKI', syllables: ['ka', 'ki'], emoji: '🦶' },
+      { id: '4-13', word: 'KUDA', syllables: ['ku', 'da'], emoji: '🐎' },
+      { id: '4-14', word: 'LARI', syllables: ['la', 'ri'], emoji: '🏃' },
+      { id: '4-15', word: 'LUKA', syllables: ['lu', 'ka'], emoji: '🩹' },
+      { id: '4-16', word: 'MATA', syllables: ['ma', 'ta'], emoji: '👀' },
+      { id: '4-17', word: 'MEJA', syllables: ['me', 'ja'], emoji: '🪵' },
+      { id: '4-18', word: 'NAMA', syllables: ['na', 'ma'], emoji: '🏷️' },
+      { id: '4-19', word: 'NASI', syllables: ['na', 'si'], emoji: '🍚' },
+      { id: '4-20', word: 'PALU', syllables: ['pa', 'lu'], emoji: '🔨' },
+      { id: '4-21', word: 'ROTI', syllables: ['ro', 'ti'], emoji: '🍞' },
+      { id: '4-22', word: 'SAPI', syllables: ['sa', 'pi'], emoji: '🐄' },
+      { id: '4-23', word: 'TOPI', syllables: ['to', 'pi'], emoji: '🧢' },
+      { id: '4-24', word: 'YOYO', syllables: ['yo', 'yo'], emoji: '🪀' },
+      { id: '4-25', word: 'ZONA', syllables: ['zo', 'na'], emoji: '📍' }
+    ];
+
+    const WORDS_5 = [
+      { id: '5-1', word: 'ANGSA', syllables: ['ang', 'sa'], emoji: '🦢' },
+      { id: '5-2', word: 'BALON', syllables: ['ba', 'lon'], emoji: '🎈' },
+      { id: '5-3', word: 'BOTOL', syllables: ['bo', 'tol'], emoji: '🍾' },
+      { id: '5-4', word: 'CICAK', syllables: ['ci', 'cak'], emoji: '🦎' },
+      { id: '5-5', word: 'DAPUR', syllables: ['da', 'pur'], emoji: '🍳' },
+      { id: '5-6', word: 'ELANG', syllables: ['e', 'lang'], emoji: '🦅' },
+      { id: '5-7', word: 'FAJAR', syllables: ['fa', 'jar'], emoji: '🌅' },
+      { id: '5-8', word: 'GAJAH', syllables: ['ga', 'jah'], emoji: '🐘' },
+      { id: '5-9', word: 'HUTAN', syllables: ['hu', 'tan'], emoji: '🌲' },
+      { id: '5-10', word: 'INDAH', syllables: ['in', 'dah'], emoji: '🌸' },
+      { id: '5-11', word: 'JALAN', syllables: ['ja', 'lan'], emoji: '🛣️' },
+      { id: '5-12', word: 'KAPAL', syllables: ['ka', 'pal'], emoji: '🚢' },
+      { id: '5-13', word: 'LEBAH', syllables: ['le', 'bah'], emoji: '🐝' },
+      { id: '5-14', word: 'MOBIL', syllables: ['mo', 'bil'], emoji: '🚗' },
+      { id: '5-15', word: 'NANAS', syllables: ['na', 'nas'], emoji: '🍍' },
+      { id: '5-16', word: 'OBENG', syllables: ['o', 'beng'], emoji: '🪛' },
+      { id: '5-17', word: 'PINTU', syllables: ['pin', 'tu'], emoji: '🚪' },
+      { id: '5-18', word: 'RAMAI', syllables: ['ra', 'mai'], emoji: '👥' },
+      { id: '5-19', word: 'SAYUR', syllables: ['sa', 'yur'], emoji: '🥬' },
+      { id: '5-20', word: 'TELUR', syllables: ['te', 'lur'], emoji: '🥚' },
+      { id: '5-21', word: 'UDARA', syllables: ['u', 'da', 'ra'], emoji: '💨' },
+      { id: '5-22', word: 'VIDEO', syllables: ['vi', 'de', 'o'], emoji: '📹' },
+      { id: '5-23', word: 'WARNA', syllables: ['war', 'na'], emoji: '🎨' },
+      { id: '5-24', word: 'YAKIN', syllables: ['ya', 'kin'], emoji: '🤝' },
+      { id: '5-25', word: 'ZEBRA', syllables: ['zeb', 'ra'], emoji: '🦓' }
+    ];
+
+    const WORDS_6 = [
+      { id: '6-1', word: 'BONEKA', syllables: ['bo', 'ne', 'ka'], emoji: '🧸' },
+      { id: '6-2', word: 'BURUNG', syllables: ['bu', 'rung'], emoji: '🐦' },
+      { id: '6-3', word: 'CERMIN', syllables: ['cer', 'min'], emoji: '🪞' },
+      { id: '6-4', word: 'DOKTER', syllables: ['dok', 'ter'], emoji: '🩺' },
+      { id: '6-5', word: 'GAYUNG', syllables: ['ga', 'yung'], emoji: '🪣' },
+      { id: '6-6', word: 'HIDUNG', syllables: ['hi', 'dung'], emoji: '👃' },
+      { id: '6-7', word: 'JAGUNG', syllables: ['ja', 'gung'], emoji: '🌽' },
+      { id: '6-8', word: 'KAMERA', syllables: ['ka', 'me', 'ra'], emoji: '📸' },
+      { id: '6-9', word: 'KANCIL', syllables: ['kan', 'cil'], emoji: '🦌' },
+      { id: '6-10', word: 'KELAPA', syllables: ['ke', 'la', 'pa'], emoji: '🥥' },
+      { id: '6-11', word: 'LEMARI', syllables: ['le', 'ma', 'ri'], emoji: '🚪' },
+      { id: '6-12', word: 'LOMPAT', syllables: ['lom', 'pat'], emoji: '🦘' },
+      { id: '6-13', word: 'MANGGA', syllables: ['mang', 'ga'], emoji: '🥭' },
+      { id: '6-14', word: 'NAMPAN', syllables: ['nam', 'pan'], emoji: '🍽️' },
+      { id: '6-15', word: 'PAYUNG', syllables: ['pa', 'yung'], emoji: '☂️' },
+      { id: '6-16', word: 'PENSIL', syllables: ['pen', 'sil'], emoji: '✏️' },
+      { id: '6-17', word: 'PERAHU', syllables: ['pe', 'ra', 'hu'], emoji: '⛵' },
+      { id: '6-18', word: 'PISANG', syllables: ['pi', 'sang'], emoji: '🍌' },
+      { id: '6-19', word: 'RUMPUT', syllables: ['rum', 'put'], emoji: '🌿' },
+      { id: '6-20', word: 'SENDOK', syllables: ['sen', 'dok'], emoji: '🥄' },
+      { id: '6-21', word: 'SEPATU', syllables: ['se', 'pa', 'tu'], emoji: '👟' },
+      { id: '6-22', word: 'SEPEDA', syllables: ['se', 'pe', 'da'], emoji: '🚲' },
+      { id: '6-23', word: 'TANDUK', syllables: ['tan', 'duk'], emoji: '🐂' },
+      { id: '6-24', word: 'TANGAN', syllables: ['ta', 'ngan'], emoji: '✋' },
+      { id: '6-25', word: 'WORTEL', syllables: ['wor', 'tel'], emoji: '🥕' }
+    ];
+
+    const STORIES = [
+      {
+        id: 'teks-1',
+        title: 'Hari Libur Budi',
+        text: 'Hari ini libur. Budi main sepeda. Budi bawa bola dan balon. Di jalan, Budi lihat burung. Burung itu terbang di udara. Budi juga lihat sapi dan kuda. Sapi sedang makan rumput. Kuda lari cepat sekali. Budi lelah. Budi duduk di bawah pohon kelapa. Budi makan roti dan pisang. Rasa pisang itu manis. Hati Budi sangat senang.'
+      },
+      {
+        id: 'teks-2',
+        title: 'Pergi ke Pasar',
+        text: 'Pagi hari yang cerah. Siti ikut ibu ke pasar. Pasar itu sudah ramai. Ibu beli sayur dan tempe. Ibu juga beli buah apel. Siti suka makan apel. Rasa apel itu manis. Siti bantu ibu bawa tas. Ibu bilang Siti anak rajin. Mereka pulang naik becak. Hati Siti sangat gembira.'
+      },
+      {
+        id: 'teks-3',
+        title: 'Kerja Bakti di Sekolah',
+        text: 'Hari ini adalah hari Jumat. Semua siswa kumpul di halaman sekolah. Mereka akan ikut kerja bakti bersama. Guru membagi tugas untuk setiap anak. Andi dan Budi bertugas menyapu lantai kelas. Meja dan kursi ditata dengan sangat rapi. Siti dan Rina cabut rumput liar di taman. Mereka juga siram bunga yang warna warni. Setelah selesai, taman dan kelas jadi bersih. Guru beri hadiah untuk semua anak. Mereka dapat sebungkus roti dan susu kotak. Semua makan bersama di teras sambil bercanda. Walau terasa lelah, hati mereka sangat senang. Lingkungan yang bersih buat belajar jadi lebih nyaman.'
+      }
+    ];
+
+    const QUIZ_QUESTIONS = [
+      // 10 Soal Teks 1
+      { id: 1, textTitle: 'Hari Libur Budi', q: 'Apa kendaraan yang dimainkan Budi pada hari libur?', opt: ['Mobil-mobilan', 'Sepeda', 'Becak', 'Perahu'], ans: 1 },
+      { id: 2, textTitle: 'Hari Libur Budi', q: 'Benda apa saja yang dibawa oleh Budi saat bersepeda?', opt: ['Buku dan pensil', 'Bola dan balon', 'Topi dan tas', 'Payung dan botol'], ans: 1 },
+      { id: 3, textTitle: 'Hari Libur Budi', q: 'Hewan apa yang dilihat Budi sedang terbang di udara?', opt: ['Lebah', 'Elang', 'Burung', 'Capung'], ans: 2 },
+      { id: 4, textTitle: 'Hari Libur Budi', q: 'Apa yang sedang dimakan oleh sapi yang dilihat Budi?', opt: ['Wortel', 'Rumput', 'Jagung', 'Roti'], ans: 1 },
+      { id: 5, textTitle: 'Hari Libur Budi', q: 'Bagaimana cara kuda bergerak menurut cerita?', opt: ['Lari cepat sekali', 'Berjalan santai', 'Melompat pelan', 'Berdiam diri'], ans: 0 },
+      { id: 6, textTitle: 'Hari Libur Budi', q: 'Di manakah Budi duduk ketika merasa lelah?', opt: ['Di bangku taman', 'Di dalam rumah', 'Di bawah pohon kelapa', 'Di atas rumput'], ans: 2 },
+      { id: 7, textTitle: 'Hari Libur Budi', q: 'Makanan apa yang dimakan Budi saat beristirahat?', opt: ['Nasi dan sayur', 'Roti dan pisang', 'Apel dan susu', 'Jagung rebus'], ans: 1 },
+      { id: 8, textTitle: 'Hari Libur Budi', q: 'Bagaimanakah rasa pisang yang dimakan oleh Budi?', opt: ['Asam', 'Pahit', 'Manis', 'Pedas'], ans: 2 },
+      { id: 9, textTitle: 'Hari Libur Budi', q: 'Bagaimana perasaan hati Budi setelah bermain dan makan?', opt: ['Sangat senang', 'Sedih', 'Takut', 'Kecewa'], ans: 0 },
+      { id: 10, textTitle: 'Hari Libur Budi', q: 'Berapa jenis hewan yang dilihat Budi sepanjang perjalanan?', opt: ['1 jenis', '2 jenis', '3 jenis (burung, sapi, kuda)', '4 jenis'], ans: 2 },
+      
+      // 10 Soal Teks 2
+      { id: 11, textTitle: 'Pergi ke Pasar', q: 'Kapan Siti dan ibunya pergi ke pasar?', opt: ['Malam hari', 'Pagi hari yang cerah', 'Sore hari hujan', 'Siang hari terik'], ans: 1 },
+      { id: 12, textTitle: 'Pergi ke Pasar', q: 'Bagaimanakah suasana di pasar saat Siti dan ibu datang?', opt: ['Sepi sekali', 'Gelap gulita', 'Sudah ramai', 'Tutup'], ans: 2 },
+      { id: 13, textTitle: 'Pergi ke Pasar', q: 'Apa yang dibeli ibu selain buah dan sayur?', opt: ['Ikan bakar', 'Tempe', 'Daging ayam', 'Roti tawar'], ans: 1 },
+      { id: 14, textTitle: 'Pergi ke Pasar', q: 'Buah apa yang dibeli oleh Ibu di pasar?', opt: ['Buah pisang', 'Buah mangga', 'Buah apel', 'Buah nanas'], ans: 2 },
+      { id: 15, textTitle: 'Pergi ke Pasar', q: 'Siapakah yang gemar makan buah apel?', opt: ['Paman', 'Siti', 'Budi', 'Supir becak'], ans: 1 },
+      { id: 16, textTitle: 'Pergi ke Pasar', q: 'Bagaimana rasa buah apel yang dibeli ibu?', opt: ['Manis', 'Pahit', 'Hambar', 'Asin'], ans: 0 },
+      { id: 17, textTitle: 'Pergi ke Pasar', q: 'Apa bantuan yang diberikan Siti kepada ibunya di pasar?', opt: ['Membayar belanjaan', 'Membantu ibu bawa tas', 'Memilih sayuran', 'Memasak tempe'], ans: 1 },
+      { id: 18, textTitle: 'Pergi ke Pasar', q: 'Pujian apa yang diberikan ibu kepada Siti?', opt: ['Anak pintar', 'Anak rajin', 'Anak kuat', 'Anak lucu'], ans: 1 },
+      { id: 19, textTitle: 'Pergi ke Pasar', q: 'Kendaraan apa yang dinaiki Siti dan ibu saat pulang dari pasar?', opt: ['Sepeda motor', 'Mobil angkot', 'Becak', 'Bus kota'], ans: 2 },
+      { id: 20, textTitle: 'Pergi ke Pasar', q: 'Bagaimanakah perasaan Siti setelah pulang dari pasar bersama ibu?', opt: ['Sangat lelah dan murung', 'Sangat gembira', 'Menangis', 'Takut'], ans: 1 },
+
+      // 10 Soal Teks 3
+      { id: 21, textTitle: 'Kerja Bakti di Sekolah', q: 'Pada hari apa kegiatan kerja bakti sekolah diadakan?', opt: ['Hari Senin', 'Hari Rabu', 'Hari Jumat', 'Hari Minggu'], ans: 2 },
+      { id: 22, textTitle: 'Kerja Bakti di Sekolah', q: 'Di manakah seluruh siswa berkumpul sebelum kerja bakti?', opt: ['Di kantin', 'Di halaman sekolah', 'Di perpustakaan', 'Di ruang guru'], ans: 1 },
+      { id: 23, textTitle: 'Kerja Bakti di Sekolah', q: 'Siapa yang membagi tugas kepada setiap anak?', opt: ['Kepala Desa', 'Guru', 'Penjaga sekolah', 'Ketua RT'], ans: 1 },
+      { id: 24, textTitle: 'Kerja Bakti di Sekolah', q: 'Apa tugas yang dilakukan oleh Andi dan Budi?', opt: ['Menyiram bunga', 'Mengecat dinding', 'Menyapu lantai kelas', 'Membeli makanan'], ans: 2 },
+      { id: 25, textTitle: 'Kerja Bakti di Sekolah', q: 'Benda apa yang ditata dengan sangat rapi di dalam kelas?', opt: ['Papan tulis dan spidol', 'Meja dan kursi', 'Tas dan sepatu', 'Buku-buku di rak'], ans: 1 },
+      { id: 26, textTitle: 'Kerja Bakti di Sekolah', q: 'Apa tugas yang dilakukan oleh Siti dan Rina?', opt: ['Menyapu kelas dan jendela', 'Cabut rumput liar & siram bunga di taman', 'Membawa susu kotak', 'Menata meja guru'], ans: 1 },
+      { id: 27, textTitle: 'Kerja Bakti di Sekolah', q: 'Hadiah apa yang diberikan guru setelah kerja bakti selesai?', opt: ['Pensil dan buku tulis', 'Uang saku', 'Sebungkus roti dan susu kotak', 'Es krim manis'], ans: 2 },
+      { id: 28, textTitle: 'Kerja Bakti di Sekolah', q: 'Di manakah anak-anak menikmati roti dan susu bersama?', opt: ['Di dalam toilet', 'Di teras sambil bercanda', 'Di jalan raya', 'Di gerbang sekolah'], ans: 1 },
+      { id: 29, textTitle: 'Kerja Bakti di Sekolah', q: 'Bagaimana suasana hati anak-anak walau merasa lelah bekerja bakti?', opt: ['Hati mereka sangat senang', 'Marah kepada guru', 'Menyesal ikut kerja bakti', 'Bosan sekali'], ans: 0 },
+      { id: 30, textTitle: 'Kerja Bakti di Sekolah', q: 'Apa manfaat lingkungan yang bersih bagi kegiatan belajar?', opt: ['Membuat cepat mengantuk', 'Membuat belajar jadi lebih nyaman', 'Membuat kelas jadi sempit', 'Membuat siswa lapar'], ans: 1 }
+    ];
+
+    /* =========================================================================
+       STATE MANAGEMENT
+       ========================================================================= */
+    let currentTab = 'home';
+    let studentName = localStorage.getItem('mpi_name') || 'Budi Pratama';
+    let studentClass = localStorage.getItem('mpi_class') || 'Kelas 1-A';
+    let quizScore = localStorage.getItem('mpi_score') !== null ? Number(localStorage.getItem('mpi_score')) : null;
+    let quizDate = localStorage.getItem('mpi_date') || '';
+    let completedWords = JSON.parse(localStorage.getItem('mpi_words') || '[]');
+    let currentWordType = '4';
+    let currentWordIndex = 0;
+    let userAnswers = {};
+    let activeQuizIndex = 0;
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let audioBlobUrl = null;
+
+    /* =========================================================================
+       AUDIO & SPEECH SYNTHESIS
+       ========================================================================= */
+    function speakText(text) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'id-ID';
+        u.rate = 0.85;
+        u.pitch = 1.1;
+        window.speechSynthesis.speak(u);
+      }
+    }
+
+    function getPredicate(score) {
+      if (score >= 90) return { label: 'Sangat Baik', color: 'text-emerald-600', badge: '🌟 Luar Biasa!' };
+      if (score >= 80) return { label: 'Baik', color: 'text-blue-600', badge: '👍 Hebat!' };
+      if (score >= 70) return { label: 'Cukup', color: 'text-amber-600', badge: '💪 Cukup Bagus' };
+      return { label: 'Perlu Bimbingan', color: 'text-rose-600', badge: '🌱 Terus Berlatih' };
+    }
+
+    function updateProgress() {
+      const progress = Math.min(100, Math.round((completedWords.length / 75) * 70 + (quizScore !== null ? 30 : 0)));
+      const el = document.getElementById('header-progress');
+      if (el) el.innerText = `${progress}%`;
+    }
+
+    function toggleDarkMode() {
+      document.documentElement.classList.toggle('dark');
+      const isDark = document.documentElement.classList.contains('dark');
+      document.getElementById('dark-icon').innerText = isDark ? '☀️' : '🌙';
+    }
+
+    /* =========================================================================
+       VOICE RECORDER LOGIC
+       ========================================================================= */
+    function toggleRecorderPanel() {
+      const panel = document.getElementById('recorder-panel');
+      panel.classList.toggle('hidden');
+    }
+
+    async function toggleRecordAction() {
+      const btn = document.getElementById('btn-record-action');
+      const timerEl = document.getElementById('recorder-timer');
+      const statusEl = document.getElementById('recorder-status');
+      const playback = document.getElementById('audio-playback');
+      const downloadBtn = document.getElementById('btn-download-record');
+
+      if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaRecorder = new MediaRecorder(stream);
+          audioChunks = [];
+
+          mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+          mediaRecorder.onstop = () => {
+            const blob = new Blob(audioChunks, { type: 'audio/webm' });
+            audioBlobUrl = URL.createObjectURL(blob);
+            playback.src = audioBlobUrl;
+            playback.classList.remove('hidden');
+            downloadBtn.classList.remove('hidden');
+            statusEl.innerText = 'Rekaman berhasil disimpan!';
+            stream.getTracks().forEach(t => t.stop());
+          };
+
+          mediaRecorder.start();
+          btn.innerText = '⏹️ Hentikan Rekaman';
+          btn.classList.replace('bg-rose-500', 'bg-slate-800');
+          timerEl.classList.remove('hidden');
+          statusEl.innerText = 'Merekam suara... Silakan membaca lantang!';
+        } catch (err) {
+          alert('Izin mikrofon diperlukan untuk merekam.');
+        }
+      } else {
+        mediaRecorder.stop();
+        btn.innerText = '🔴 Rekam Ulang Suara';
+        btn.classList.replace('bg-slate-800', 'bg-rose-500');
+        timerEl.classList.add('hidden');
+      }
+    }
+
+    function downloadRecordedAudio() {
+      if (!audioBlobUrl) return;
+      const a = document.createElement('a');
+      a.href = audioBlobUrl;
+      a.download = `Rekaman-Membaca-${studentName.replace(/\s+/g, '_')}.webm`;
+      a.click();
+    }
+
+    /* =========================================================================
+       VIEW ROUTING & RENDERING
+       ========================================================================= */
+    function navigateTab(tab) {
+      currentTab = tab;
+      const container = document.getElementById('app-container');
+
+      document.querySelectorAll('nav button').forEach(b => {
+        b.className = 'px-3 py-1.5 rounded-lg transition-colors text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white';
+      });
+      const activeNav = document.getElementById(`nav-${tab === 'kirim-nilai' ? 'kirim' : tab}`);
+      if (activeNav) activeNav.className = 'px-3 py-1.5 rounded-lg transition-colors text-[#7B2CBF] bg-purple-50 dark:bg-purple-950/40 font-semibold';
+
+      if (tab === 'home') renderHome(container);
+      else if (tab === 'materi') renderMateri(container);
+      else if (tab === 'asesmen') renderAsesmen(container);
+      else if (tab === 'sertifikat') renderSertifikat(container);
+      else if (tab === 'kirim-nilai') renderKirimNilai(container);
+
+      updateProgress();
+    }
+
+    // 1. HOME VIEW
+    function renderHome(container) {
+      container.innerHTML = `
+        <div class="space-y-8 animate-fadeIn">
+          <!-- Hero Banner -->
+          <div class="rounded-3xl bg-gradient-to-br from-[#7B2CBF] via-[#5A189A] to-[#2EC4B6] p-8 sm:p-12 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-8">
+            <div class="space-y-4 max-w-xl">
+              <span class="px-3 py-1 rounded-full bg-white/20 text-xs font-bold uppercase tracking-wider">🌟 Literasi Membaca Cepat SD</span>
+              <h1 class="text-3xl sm:text-5xl font-extrabold font-display leading-tight">Belajar Membaca Lancar & Ceria!</h1>
+              <p class="text-white/90 text-sm leading-relaxed">
+                Media Pembelajaran Interaktif (MPI) untuk siswa usia 6–8 tahun (Kelas 1–3 SD). Belajar kata 4-5-6 huruf, dongeng cerita, asesmen otomatis 30 soal, sertifikat PDF, dan kirim nilai ke WhatsApp Admin.
+              </p>
+              
+              <!-- Student Profile Box -->
+              <div class="p-3 bg-white/15 backdrop-blur-md rounded-2xl flex flex-wrap items-center gap-3 border border-white/20">
+                <input type="text" id="input-student-name" value="${studentName}" placeholder="Nama Siswa..." class="px-3 py-1.5 rounded-xl bg-white text-slate-800 text-xs font-bold focus:outline-none w-40">
+                <input type="text" id="input-student-class" value="${studentClass}" placeholder="Kelas..." class="px-3 py-1.5 rounded-xl bg-white text-slate-800 text-xs font-bold focus:outline-none w-28">
+                <button onclick="saveProfile()" class="px-4 py-1.5 rounded-xl bg-[#2EC4B6] text-white text-xs font-bold shadow hover:bg-teal-500">Simpan Nama</button>
+              </div>
+
+              <div>
+                <button onclick="navigateTab('materi')" class="px-6 py-3 rounded-2xl bg-white text-[#7B2CBF] font-display font-bold text-sm shadow-lg hover:scale-102 transition-transform">
+                  🚀 Mulai Belajar Sekarang
+                </button>
+              </div>
+            </div>
+
+            <div class="text-center p-6 bg-white/10 backdrop-blur-md rounded-3xl border border-white/20">
+              <div class="text-7xl mb-2 animate-float">📖</div>
+              <p class="font-display font-bold text-lg">75 Kata & 3 Cerita</p>
+              <p class="text-xs text-purple-200">Suara Guru + Rekaman Audio</p>
+            </div>
+          </div>
+
+          <!-- 4 Menu Cards (Canva Style) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div onclick="navigateTab('materi')" class="p-6 rounded-2xl bg-white dark:bg-slate-800 shadow-md border-2 border-transparent hover:border-[#7B2CBF] cursor-pointer transition-all hover:-translate-y-1">
+              <div class="text-3xl mb-3">📚</div>
+              <p class="text-xs font-bold text-[#7B2CBF] uppercase tracking-wider">📌 Menu 1</p>
+              <h3 class="text-lg font-bold font-display mt-1">Materi Bacaan</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">75 kata pilihan (4, 5, 6 huruf) dengan suku kata interaktif dan 3 teks sederhana.</p>
+            </div>
+
+            <div onclick="navigateTab('asesmen')" class="p-6 rounded-2xl bg-white dark:bg-slate-800 shadow-md border-2 border-transparent hover:border-[#2EC4B6] cursor-pointer transition-all hover:-translate-y-1">
+              <div class="text-3xl mb-3">🏆</div>
+              <p class="text-xs font-bold text-[#2EC4B6] uppercase tracking-wider">📌 Menu 2</p>
+              <h3 class="text-lg font-bold font-display mt-1">Asesmen Akhir</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">30 soal pilihan ganda dari 3 teks cerita dengan skor otomatis dan timer.</p>
+            </div>
+
+            <div onclick="navigateTab('sertifikat')" class="p-6 rounded-2xl bg-white dark:bg-slate-800 shadow-md border-2 border-transparent hover:border-amber-400 cursor-pointer transition-all hover:-translate-y-1">
+              <div class="text-3xl mb-3">📜</div>
+              <p class="text-xs font-bold text-amber-500 uppercase tracking-wider">📌 Menu 3</p>
+              <h3 class="text-lg font-bold font-display mt-1">Sertifikat Belajar</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">Sertifikat penghargaan resmi dengan nama siswa, nilai kuis, dan unduh PDF.</p>
+            </div>
+
+            <div onclick="navigateTab('kirim-nilai')" class="p-6 rounded-2xl bg-white dark:bg-slate-800 shadow-md border-2 border-transparent hover:border-emerald-500 cursor-pointer transition-all hover:-translate-y-1">
+              <div class="text-3xl mb-3">💬</div>
+              <p class="text-xs font-bold text-emerald-500 uppercase tracking-wider">📌 Menu 4</p>
+              <h3 class="text-lg font-bold font-display mt-1">Kirim Nilai WA</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">Kirim data nilai, kartu JPG, dan file suara langsung ke WhatsApp Admin (085828459399).</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function saveProfile() {
+      const nameInput = document.getElementById('input-student-name').value.trim();
+      const classInput = document.getElementById('input-student-class').value.trim();
+      if (nameInput) studentName = nameInput;
+      if (classInput) studentClass = classInput;
+      localStorage.setItem('mpi_name', studentName);
+      localStorage.setItem('mpi_class', studentClass);
+      alert('Nama dan Kelas Siswa berhasil disimpan!');
+    }
+
+    // 2. MATERI VIEW
+    function renderMateri(container) {
+      const getList = () => {
+        if (currentWordType === '4') return WORDS_4;
+        if (currentWordType === '5') return WORDS_5;
+        if (currentWordType === '6') return WORDS_6;
+        return [];
+      };
+
+      if (currentWordType !== 'cerita') {
+        const list = getList();
+        const item = list[currentWordIndex] || list[0];
+        const isMastered = completedWords.includes(item.id);
+
+        container.innerHTML = `
+          <div class="space-y-6">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
+              <h1 class="text-2xl font-bold font-display">Materi Membaca Kata (${currentWordType} Huruf)</h1>
+              <button onclick="navigateTab('home')" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold">🏠 Beranda</button>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex flex-wrap gap-2 p-1.5 bg-slate-100 dark:bg-slate-800 rounded-2xl">
+              <button onclick="setWordType('4')" class="px-4 py-2 rounded-xl text-xs font-bold ${currentWordType === '4' ? 'bg-[#7B2CBF] text-white shadow' : 'text-slate-600 dark:text-slate-300'}">📖 4 Huruf</button>
+              <button onclick="setWordType('5')" class="px-4 py-2 rounded-xl text-xs font-bold ${currentWordType === '5' ? 'bg-[#2EC4B6] text-white shadow' : 'text-slate-600 dark:text-slate-300'}">🚀 5 Huruf</button>
+              <button onclick="setWordType('6')" class="px-4 py-2 rounded-xl text-xs font-bold ${currentWordType === '6' ? 'bg-[#FF9F1C] text-white shadow' : 'text-slate-600 dark:text-slate-300'}">👑 6 Huruf</button>
+              <button onclick="setWordType('cerita')" class="px-4 py-2 rounded-xl text-xs font-bold ${currentWordType === 'cerita' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-300'}">✨ 3 Cerita</button>
+            </div>
+
+            <!-- Single Word Card -->
+            <div class="max-w-xl mx-auto p-8 sm:p-12 rounded-3xl bg-white dark:bg-slate-800 border-4 border-[#7B2CBF]/20 text-center shadow-xl space-y-6">
+              <div class="flex items-center justify-between text-xs text-slate-400 font-semibold">
+                <span>Kata ke- <strong class="text-[#7B2CBF] dark:text-[#2EC4B6]">${currentWordIndex + 1}</strong> dari ${list.length}</span>
+                <span class="bg-purple-100 dark:bg-purple-950/60 text-[#7B2CBF] px-2.5 py-0.5 rounded-full font-bold">${item.word.length} Huruf</span>
+              </div>
+
+              <div class="text-7xl animate-float">${item.emoji}</div>
+
+              <!-- Syllables Breakdown -->
+              <div class="flex items-center justify-center gap-2">
+                ${item.syllables.map(s => `
+                  <span class="px-4 py-2 rounded-2xl bg-purple-50 dark:bg-purple-950/60 text-[#7B2CBF] dark:text-purple-300 font-display font-extrabold text-3xl border-2 border-purple-200">
+                    ${s}
+                  </span>
+                `).join('')}
+              </div>
+
+              <h2 class="text-5xl font-extrabold font-display tracking-wider text-slate-900 dark:text-white">${item.word}</h2>
+
+              <div class="flex flex-wrap items-center justify-center gap-3 pt-4">
+                <button onclick="speakText('${item.syllables.join(' ... ')} ... ${item.word}')" class="px-5 py-3 rounded-2xl bg-[#7B2CBF] text-white font-bold text-xs shadow hover:bg-purple-700">
+                  🔊 Dengarkan Suara Guru
+                </button>
+                <button onclick="toggleWordMastery('${item.id}')" class="px-4 py-3 rounded-2xl border-2 font-bold text-xs ${isMastered ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'border-slate-300'}">
+                  ${isMastered ? 'Sudah Lancar! ⭐' : 'Tandai Sudah Lancar'}
+                </button>
+              </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="max-w-xl mx-auto flex items-center justify-between gap-4">
+              <button onclick="prevWord()" class="flex-1 py-3 rounded-2xl bg-white dark:bg-slate-800 border font-bold text-xs">⬅️ Kata Sebelumnya</button>
+              <button onclick="nextWord()" class="flex-1 py-3 rounded-2xl bg-gradient-to-r from-[#7B2CBF] to-[#2EC4B6] text-white font-bold text-xs shadow">Lanjut Kata Berikutnya ➡️</button>
+            </div>
+          </div>
+        `;
+      } else {
+        // Cerita View
+        container.innerHTML = `
+          <div class="space-y-6">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
+              <h1 class="text-2xl font-bold font-display">Teks Sederhana (3 Cerita Interaktif)</h1>
+              <button onclick="setWordType('4')" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold">Kembali ke Kata</button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              ${STORIES.map((s, idx) => `
+                <div class="p-6 rounded-3xl bg-white dark:bg-slate-800 border-2 border-purple-200 dark:border-purple-800 shadow-md space-y-4 flex flex-col justify-between">
+                  <div class="space-y-2">
+                    <span class="text-xs font-bold text-[#2EC4B6] uppercase">Teks ${idx + 1}</span>
+                    <h3 class="text-xl font-bold font-display text-slate-900 dark:text-white">${s.title}</h3>
+                    <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">${s.text}</p>
+                  </div>
+                  <div class="pt-3 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                    <button onclick="speakText('${s.text.replace(/'/g, "\\'")}')" class="text-xs font-bold text-[#7B2CBF] hover:underline">
+                      🔊 Bacakan Cerita
+                    </button>
+                    <button onclick="navigateTab('asesmen')" class="px-3 py-1.5 rounded-xl bg-[#2EC4B6] text-white font-bold text-xs shadow">
+                      Kuis Asesmen
+                    </button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    function setWordType(type) {
+      currentWordType = type;
+      currentWordIndex = 0;
+      renderMateri(document.getElementById('app-container'));
+    }
+
+    function nextWord() {
+      const list = currentWordType === '4' ? WORDS_4 : currentWordType === '5' ? WORDS_5 : WORDS_6;
+      currentWordIndex = (currentWordIndex + 1) % list.length;
+      renderMateri(document.getElementById('app-container'));
+    }
+
+    function prevWord() {
+      const list = currentWordType === '4' ? WORDS_4 : currentWordType === '5' ? WORDS_5 : WORDS_6;
+      currentWordIndex = (currentWordIndex - 1 + list.length) % list.length;
+      renderMateri(document.getElementById('app-container'));
+    }
+
+    function toggleWordMastery(id) {
+      if (completedWords.includes(id)) {
+        completedWords = completedWords.filter(x => x !== id);
+      } else {
+        completedWords.push(id);
+      }
+      localStorage.setItem('mpi_words', JSON.stringify(completedWords));
+      updateProgress();
+      renderMateri(document.getElementById('app-container'));
+    }
+
+    // 3. ASESMEN VIEW
+    function renderAsesmen(container) {
+      const q = QUIZ_QUESTIONS[activeQuizIndex];
+      const isSubmitted = quizScore !== null;
+      const predicate = isSubmitted ? getPredicate(quizScore) : null;
+
+      container.innerHTML = `
+        <div class="space-y-6">
+          <div class="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
+            <div>
+              <span class="text-xs font-bold text-[#2EC4B6] uppercase">Evaluasi Membaca</span>
+              <h1 class="text-2xl font-bold font-display">Asesmen Akhir (30 Soal)</h1>
+            </div>
+            <button onclick="navigateTab('home')" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold">🏠 Beranda</button>
+          </div>
+
+          <!-- Score Banner if done -->
+          ${isSubmitted ? `
+            <div class="p-6 rounded-3xl bg-purple-50 dark:bg-purple-950/40 border-2 border-purple-300 dark:border-purple-700 shadow-md flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div>
+                <span class="text-xs font-bold text-slate-500 uppercase">Hasil Belajar: ${studentName}</span>
+                <h2 class="text-3xl font-extrabold font-display text-[#7B2CBF] dark:text-purple-300">Skor: ${quizScore} / 100</h2>
+                <p class="text-sm font-bold ${predicate.color}">Predikat: ${predicate.label} (${predicate.badge})</p>
+              </div>
+              <div class="flex gap-2">
+                <button onclick="navigateTab('sertifikat')" class="px-4 py-2 rounded-xl bg-[#7B2CBF] text-white text-xs font-bold shadow">📜 Lihat Sertifikat</button>
+                <button onclick="navigateTab('kirim-nilai')" class="px-4 py-2 rounded-xl bg-[#2EC4B6] text-white text-xs font-bold shadow">💬 Kirim WA</button>
+                <button onclick="resetAsesmen()" class="px-3 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 text-xs font-bold">Ulangi</button>
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- Active Question Card -->
+          <div class="p-6 sm:p-10 rounded-3xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 shadow-lg space-y-6">
+            <div class="flex items-center justify-between text-xs text-slate-400 font-semibold border-b pb-3">
+              <span>Soal Nomor <strong class="text-base text-[#7B2CBF]">${q.id}</strong> / 30</span>
+              <span class="bg-purple-100 dark:bg-purple-950/60 text-[#7B2CBF] px-2.5 py-0.5 rounded-full font-bold">${q.textTitle}</span>
+            </div>
+
+            <h3 class="text-xl font-bold font-display text-slate-900 dark:text-white leading-relaxed">${q.q}</h3>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              ${q.opt.map((o, idx) => {
+                const isSelected = userAnswers[q.id] === idx;
+                const isCorrect = isSubmitted && q.ans === idx;
+                const isWrong = isSubmitted && isSelected && !isCorrect;
+
+                let border = isSelected ? 'border-[#7B2CBF] bg-purple-50 dark:bg-purple-950/40' : 'border-slate-200 dark:border-slate-700';
+                if (isCorrect) border = 'border-emerald-500 bg-emerald-50';
+                if (isWrong) border = 'border-rose-500 bg-rose-50';
+
+                return `
+                  <button onclick="selectOption(${q.id}, ${idx})" ${isSubmitted ? 'disabled' : ''} class="p-4 rounded-2xl border-2 text-left font-semibold text-xs sm:text-sm flex items-center justify-between transition-all ${border}">
+                    <span>${String.fromCharCode(65 + idx)}. ${o}</span>
+                    ${isCorrect ? '✅' : isWrong ? '❌' : ''}
+                  </button>
+                `;
+              }).join('')}
+            </div>
+
+            <div class="flex items-center justify-between pt-4 border-t">
+              <button onclick="prevQuestion()" ${activeQuizIndex === 0 ? 'disabled' : ''} class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-xs font-bold disabled:opacity-40">Sebelumnya</button>
+              
+              ${!isSubmitted ? `
+                <button onclick="submitQuiz()" class="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-[#7B2CBF] to-[#2EC4B6] text-white font-bold text-xs shadow">
+                  Selesai & Hitung Nilai (${Object.keys(userAnswers).length}/30)
+                </button>
+              ` : ''}
+
+              <button onclick="nextQuestion()" ${activeQuizIndex === QUIZ_QUESTIONS.length - 1 ? 'disabled' : ''} class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-xs font-bold disabled:opacity-40">Selanjutnya</button>
+            </div>
+          </div>
+
+          <!-- Question Matrix 1-30 -->
+          <div class="p-4 bg-white dark:bg-slate-800 rounded-2xl border flex flex-wrap gap-1.5 justify-center">
+            ${QUIZ_QUESTIONS.map((item, idx) => `
+              <button onclick="jumpQuestion(${idx})" class="w-8 h-8 rounded-lg text-xs font-bold ${activeQuizIndex === idx ? 'ring-2 ring-[#7B2CBF] scale-110' : ''} ${userAnswers[item.id] !== undefined ? 'bg-[#7B2CBF] text-white' : 'bg-slate-100 dark:bg-slate-700'}">
+                ${item.id}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function selectOption(qId, optIdx) {
+      userAnswers[qId] = optIdx;
+      renderAsesmen(document.getElementById('app-container'));
+    }
+
+    function nextQuestion() {
+      if (activeQuizIndex < QUIZ_QUESTIONS.length - 1) {
+        activeQuizIndex++;
+        renderAsesmen(document.getElementById('app-container'));
+      }
+    }
+
+    function prevQuestion() {
+      if (activeQuizIndex > 0) {
+        activeQuizIndex--;
+        renderAsesmen(document.getElementById('app-container'));
+      }
+    }
+
+    function jumpQuestion(idx) {
+      activeQuizIndex = idx;
+      renderAsesmen(document.getElementById('app-container'));
+    }
+
+    function submitQuiz() {
+      let correct = 0;
+      QUIZ_QUESTIONS.forEach(q => {
+        if (userAnswers[q.id] === q.ans) correct++;
+      });
+      quizScore = Math.round((correct / QUIZ_QUESTIONS.length) * 100);
+      quizDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+      localStorage.setItem('mpi_score', quizScore.toString());
+      localStorage.setItem('mpi_date', quizDate);
+
+      if (quizScore >= 90 && typeof confetti === 'function') {
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+      }
+
+      updateProgress();
+      renderAsesmen(document.getElementById('app-container'));
+    }
+
+    function resetAsesmen() {
+      quizScore = null;
+      userAnswers = {};
+      activeQuizIndex = 0;
+      localStorage.removeItem('mpi_score');
+      updateProgress();
+      renderAsesmen(document.getElementById('app-container'));
+    }
+
+    // 4. SERTIFIKAT VIEW
+    function renderSertifikat(container) {
+      if (quizScore === null) {
+        container.innerHTML = `
+          <div class="max-w-md mx-auto p-8 rounded-3xl bg-white dark:bg-slate-800 border text-center space-y-4 shadow-lg">
+            <div class="text-5xl">⚠️</div>
+            <h2 class="text-xl font-bold font-display">Asesmen Belum Dikerjakan</h2>
+            <p class="text-xs text-slate-500">Sertifikat resmi hanya dapat diterbitkan setelah peserta didik menyelesaikan Asesmen Akhir.</p>
+            <button onclick="navigateTab('asesmen')" class="px-5 py-2.5 rounded-2xl bg-[#7B2CBF] text-white font-bold text-xs shadow">Kerjakan Asesmen</button>
+          </div>
+        `;
+        return;
+      }
+
+      const predicate = getPredicate(quizScore);
+
+      container.innerHTML = `
+        <div class="space-y-6">
+          <div class="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
+            <h1 class="text-2xl font-bold font-display">Sertifikat Hasil Belajar</h1>
+            <div class="flex gap-2">
+              <button onclick="downloadCertificatePdf()" class="px-4 py-2 rounded-xl bg-[#7B2CBF] text-white text-xs font-bold shadow">📥 Unduh PDF</button>
+              <button onclick="window.print()" class="px-4 py-2 rounded-xl bg-[#2EC4B6] text-white text-xs font-bold shadow">🖨 Cetak</button>
+            </div>
+          </div>
+
+          <!-- Printable Certificate Frame -->
+          <div class="overflow-x-auto pb-4">
+            <div id="printable-certificate" class="w-[850px] h-[600px] mx-auto bg-white text-slate-800 p-8 rounded-3xl border-[10px] border-[#7B2CBF] shadow-2xl relative flex flex-col justify-between">
+              <div class="text-center space-y-1">
+                <span class="text-xs font-bold text-[#7B2CBF] uppercase tracking-widest">⭐ Media Pembelajaran Interaktif (MPI) Literasi SD ⭐</span>
+                <h2 class="text-3xl font-extrabold font-display text-[#7B2CBF] uppercase">SERTIFIKAT HASIL BELAJAR</h2>
+                <p class="text-xs text-slate-400">Nomor: MPI-SD/${new Date().getFullYear()}/089</p>
+              </div>
+
+              <div class="text-center space-y-3 px-8">
+                <p class="text-xs text-slate-500 uppercase font-semibold">Diberikan kepada siswa teladan:</p>
+                <h3 class="text-3xl font-extrabold font-display text-slate-900 border-b-2 pb-1 inline-block">${studentName}</h3>
+                <p class="text-xs font-bold text-slate-600">Peserta Didik: ${studentClass}</p>
+                <p class="text-xs text-slate-600 max-w-xl mx-auto">
+                  Telah berhasil menyelesaikan seluruh materi membaca suku kata 4-5-6 huruf, 3 teks cerita sederhana, dan menyelesaikan Asesmen Akhir dengan perolehan hasil belajar:
+                </p>
+
+                <div class="inline-flex items-center gap-6 px-8 py-2 rounded-2xl bg-purple-50 border border-purple-200">
+                  <div>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase">Nilai Asesmen</p>
+                    <p class="text-3xl font-extrabold font-display text-[#7B2CBF]">${quizScore} / 100</p>
+                  </div>
+                  <div class="h-8 w-px bg-slate-300"></div>
+                  <div>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase">Predikat</p>
+                    <p class="text-xl font-extrabold font-display text-[#2EC4B6]">${predicate.label}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 items-end px-6 text-xs">
+                <div class="text-left space-y-1">
+                  <p class="text-[11px] text-slate-400 font-mono">Tgl: ${quizDate || new Date().toLocaleDateString('id-ID')}</p>
+                  <p class="text-[11px] font-bold text-emerald-600">Verifikasi Sah MPI Interaktif</p>
+                </div>
+                <div class="text-right space-y-1">
+                  <p class="text-[11px] text-slate-500">Guru Pembimbing,</p>
+                  <p class="text-base font-serif italic text-[#7B2CBF] font-bold">Danu Waloyo, S.Pd.</p>
+                  <p class="text-[10px] text-slate-400">NIP. 19890415 201502 1 002</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function downloadCertificatePdf() {
+      const el = document.getElementById('printable-certificate');
+      if (!el || typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') return;
+      const canvas = await html2canvas(el, { scale: 2 });
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight());
+      pdf.save(`Sertifikat-${studentName.replace(/\s+/g, '_')}.pdf`);
+    }
+
+    // 5. KIRIM NILAI VIEW
+    function renderKirimNilai(container) {
+      const predicate = quizScore !== null ? getPredicate(quizScore) : null;
+      const audioText = audioBlobUrl ? 'Sudah Direkam (Terlampir)' : 'Belum Ada Rekaman';
+
+      container.innerHTML = `
+        <div class="space-y-6">
+          <div class="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
+            <h1 class="text-2xl font-bold font-display">Kirim Nilai ke WhatsApp Admin</h1>
+            <button onclick="navigateTab('home')" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold">🏠 Beranda</button>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+            <div class="p-6 rounded-3xl bg-white dark:bg-slate-800 border-2 shadow-lg space-y-4">
+              <h3 class="font-display font-bold text-lg text-slate-800 dark:text-white">Format Laporan WhatsApp Admin</h3>
+              
+              <div class="space-y-3 text-xs">
+                <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl">
+                  <strong>1. Nama Siswa:</strong> ${studentName}
+                </div>
+                <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl">
+                  <strong>2. Kelas:</strong> ${studentClass}
+                </div>
+                <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl">
+                  <strong>3. Nilai Asesmen Akhir:</strong> ${quizScore !== null ? `${quizScore} / 100 (${predicate.label})` : 'Belum Ada Nilai'}
+                </div>
+                <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl">
+                  <strong>4. Rekaman Suara:</strong> ${audioText}
+                </div>
+              </div>
+
+              <div class="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl text-xs text-emerald-800 dark:text-emerald-200">
+                Target Nomor WhatsApp Admin: <strong>085828459399</strong>
+              </div>
+
+              <button onclick="sendToWhatsApp()" class="w-full py-3.5 rounded-2xl bg-[#25D366] hover:bg-emerald-600 text-white font-display font-bold text-sm shadow-lg">
+                💬 Buka WhatsApp & Kirim Nilai
+              </button>
+              <button onclick="downloadCardJpg()" class="w-full py-3 rounded-2xl border-2 border-[#7B2CBF] text-[#7B2CBF] font-bold text-xs">
+                🖼️ Unduh Kartu Nilai (JPG)
+              </button>
+            </div>
+
+            <!-- Preview Card -->
+            <div id="report-card" class="p-6 rounded-3xl bg-white text-slate-800 border-4 border-[#7B2CBF] shadow-xl space-y-4">
+              <div class="border-b pb-2 flex items-center justify-between">
+                <div>
+                  <h4 class="font-display font-bold text-base text-[#7B2CBF]">KARTU NILAI PESERTA DIDIK</h4>
+                  <p class="text-[11px] text-slate-500">Media Pembelajaran Interaktif SD</p>
+                </div>
+                <span class="text-xs font-bold text-slate-400">${quizDate || new Date().toLocaleDateString('id-ID')}</span>
+              </div>
+              <div class="space-y-2 text-xs">
+                <p><strong>Nama:</strong> ${studentName}</p>
+                <p><strong>Kelas:</strong> ${studentClass}</p>
+                <p><strong>Nilai Asesmen:</strong> <span class="text-base font-bold text-[#7B2CBF]">${quizScore !== null ? quizScore : 0} / 100</span></p>
+                <p><strong>Predikat:</strong> ${predicate ? predicate.label : '-'}</p>
+                <p><strong>Rekaman Suara:</strong> ${audioText}</p>
+              </div>
+              <div class="p-3 bg-purple-100 rounded-xl text-center font-bold text-xs text-[#7B2CBF]">
+                Status: Resmi Terdaftar pada Sistem MPI Interaktif
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function sendToWhatsApp() {
+      const predicate = quizScore !== null ? getPredicate(quizScore) : null;
+      const text = `*LAPORAN HASIL BELAJAR - MPI INTERAKTIF*
+==================================
+1. *Nama Siswa*: ${studentName}
+2. *Kelas*: ${studentClass}
+3. *Nilai Asesmen Akhir*: ${quizScore !== null ? `${quizScore} / 100` : '-'} (${predicate ? predicate.label : '-'})
+4. *Rekaman Suara*: ${audioBlobUrl ? 'Sudah Direkam (Terlampir)' : 'Belum Ada'}
+5. *Tanggal Belajar*: ${quizDate || new Date().toLocaleDateString('id-ID')}
+==================================
+_Laporan dikirim otomatis melalui Media Pembelajaran Interaktif (MPI)._`;
+
+      const waUrl = `https://wa.me/6285828459399?text=${encodeURIComponent(text)}`;
+      window.open(waUrl, '_blank');
+    }
+
+    async function downloadCardJpg() {
+      const el = document.getElementById('report-card');
+      if (!el || typeof html2canvas === 'undefined') return;
+      const canvas = await html2canvas(el, { scale: 2 });
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `Kartu-Nilai-${studentName.replace(/\s+/g, '_')}.jpg`;
+      a.click();
+    }
+
+    // Inisialisasi awal saat halaman dimuat
+    window.addEventListener('DOMContentLoaded', () => {
+      navigateTab('home');
+    });
+  </script>
+</body>
+</html>
